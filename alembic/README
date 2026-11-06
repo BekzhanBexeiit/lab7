@@ -1,0 +1,2 @@
+Generic single-database configuration.
+Run all Alembic commands from the project root (where alembic.ini is located).
