@@ -1,46 +1,46 @@
-# Course Catalog API — 7-зертхана
+# Course Catalog API — Lab 7
 
-**Заманауи веб-технологиялар · 7-зертхана**
+**Advanced Web Technologies · Lab 7**
 
-SQLAlchemy 2.x ORM және Alembic миграциялары арқылы PostgreSQL-ге қосылған FastAPI бэкенд.
-4–6-зертханалар жобасының үстіне салынған: жадта сақталатын деректер нақты дерекқормен ауыстырылды.
+FastAPI backend connected to PostgreSQL via SQLAlchemy 2.x ORM and Alembic migrations.
+Built on top of the Labs 4–6 project: replaces the in-memory data with a real database.
 
 ---
 
-## Технологиялар
+## Tech Stack
 
-| Қабат | Құрал |
-|-------|-------|
-| Веб-фреймворк | FastAPI |
+| Layer | Tool |
+|-------|------|
+| Web framework | FastAPI |
 | ORM | SQLAlchemy 2.x |
-| Дерекқор драйвері | psycopg 3 (binary) |
-| Миграциялар | Alembic |
-| Параметрлер | pydantic-settings |
-| Дерекқор | PostgreSQL 16+ |
+| Database driver | psycopg 3 (binary) |
+| Migrations | Alembic |
+| Settings | pydantic-settings |
+| Database | PostgreSQL 16+ |
 
 ---
 
-## Жоба құрылымы
+## Project Structure
 
 ```
 course-catalog-api/
-├── main.py                          # Барлық FastAPI маршруттары (8 endpoint)
-├── config.py                        # Параметрлер: .env-тен DATABASE_URL оқиды
+├── main.py                          # All FastAPI routes (8 endpoints)
+├── config.py                        # Settings: reads DATABASE_URL from .env
 ├── db.py                            # Engine, Base, SessionLocal, get_db dependency
-├── models.py                        # SQLAlchemy ORM модельдері (Course, Student, Enrollment)
-├── schemas.py                       # Сұраныс/жауап JSON үшін Pydantic схемалары
-├── seed.sql                         # Бастапқы деректер (TRUNCATE + INSERT)
-├── check_db.py                      # Дерекқор қосылымын тексеру
-├── check_models.py                  # Модель ↔ дерекқор constraint атауларының сәйкестігін тексеру
-├── try_errors.py                    # 5 HTTP қате жауабын тестілеу (сервер іске қосылған болуы керек)
-├── alembic.ini                      # Alembic конфигурациясы
+├── models.py                        # SQLAlchemy ORM models (Course, Student, Enrollment)
+├── schemas.py                       # Pydantic schemas for request/response JSON
+├── seed.sql                         # Initial data (TRUNCATE + INSERT)
+├── check_db.py                      # Verify database connection
+├── check_models.py                  # Verify model ↔ database constraint name match
+├── try_errors.py                    # Test all 5 HTTP error responses (needs running server)
+├── alembic.ini                      # Alembic configuration
 ├── alembic/
-│   ├── env.py                       # Alembic-ті жоба модельдері мен параметрлеріне қосады
-│   ├── script.py.mako               # Миграция файлының үлгісі
+│   ├── env.py                       # Connects Alembic to project models and settings
+│   ├── script.py.mako               # Migration file template
 │   └── versions/
-│       ├── 0001_create_catalog_tables.py   # courses, students, enrollments кестелерін жасайды
-│       └── 0002_add_course_level.py        # level бағанын қосады (3 қадамды миграция)
-├── .env.example                     # Параметрлер файлының үлгісі (.env-ке көшір)
+│       ├── 0001_create_catalog_tables.py   # Creates courses, students, enrollments
+│       └── 0002_add_course_level.py        # Adds level column (3-step migration)
+├── .env.example                     # Sample environment file (copy to .env)
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -48,27 +48,27 @@ course-catalog-api/
 
 ---
 
-## Іске қосу жолы
+## How to Run
 
-### Алдын ала талаптар
+### Prerequisites
 - Python 3.11+
 - PostgreSQL 16+
 
-### 1. Дерекқор рөлі мен дерекқорды жасау (`postgres` superuser ретінде)
+### 1. Create the database role and database (as `postgres` superuser)
 
 ```sql
 CREATE ROLE catalog_app LOGIN PASSWORD 'change-me';
 CREATE DATABASE course_catalog OWNER catalog_app;
 ```
 
-### 2. Жобаны клондау және орнату
+### 2. Clone and set up the project
 
 ```bash
 git clone https://github.com/BekzhanBexeiit/lab7.git
 cd lab7
 ```
 
-### 3. Виртуалды орта жасау және тәуелділіктерді орнату
+### 3. Create virtual environment and install dependencies
 
 ```bash
 python -m venv .venv
@@ -82,7 +82,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Параметрлерді баптау
+### 4. Configure environment
 
 ```bash
 # Windows
@@ -92,175 +92,175 @@ copy .env.example .env
 cp .env.example .env
 ```
 
-Егер пароль немесе порт өзгеше болса, `.env`-ті өңдеңіз:
+Edit `.env` if your password or port differs:
 ```
 DATABASE_URL=postgresql+psycopg://catalog_app:change-me@localhost:5432/course_catalog
 ```
 
-### 5. Миграцияларды жүргізу
+### 5. Run migrations
 
 ```bash
 alembic upgrade head
 ```
 
-Екі миграция кезекпен жүргізіледі:
-- `0001` — `courses`, `students`, `enrollments` кестелерін жасайды
-- `0002` — `courses` кестесіне `level` бағанын қосады (3 қадамды миграция)
+This runs both migrations in order:
+- `0001` — creates `courses`, `students`, `enrollments` tables
+- `0002` — adds the `level` column to `courses` (3-step migration)
 
-### 6. Бастапқы деректерді жүктеу
+### 6. Load initial data
 
 ```bash
 psql -h localhost -U catalog_app -d course_catalog -v ON_ERROR_STOP=1 -f seed.sql
 ```
 
-### 7. Орнатуды тексеру (міндетті емес)
+### 7. Verify setup (optional)
 
 ```bash
-python check_db.py      # Шығуы керек: connected to course_catalog as catalog_app
-python check_models.py  # Шығуы керек: names only in models: none / names only in database: none
+python check_db.py      # Should print: connected to course_catalog as catalog_app
+python check_models.py  # Should print: names only in models: none / names only in database: none
 ```
 
-### 8. Серверді іске қосу
+### 8. Start the server
 
 ```bash
 fastapi dev main.py
 ```
 
-API құжаттамасы: **http://localhost:8000/docs**
+API docs: **http://localhost:8000/docs**
 
 ---
 
-## API Маршруттары
+## API Endpoints
 
-| Әдіс | Жол | Сипаттама |
-|------|-----|-----------|
-| GET | `/` | Сервер жұмыс істеп тұрғанын тексеру |
-| GET | `/courses` | Курстар тізімі (сүзгілер: `is_elective`, `level`; сұрыптау: `popular`/`title`; беттеу: `page`, `page_size`) |
-| GET | `/courses/{course_id}` | Бір курсты алу |
-| POST | `/courses/{course_id}/like` | `UPDATE … SET likes = likes + 1` арқылы like қосу |
-| POST | `/students` | Студент жасау |
-| POST | `/enrollments` | Студентті курсқа тіркеу |
-| GET | `/enrollments` | Курс атауы мен студент атымен барлық тіркелулер (JOIN) |
-| GET | `/stats/courses` | Әр курстың тіркелу саны, нөлдер де қосылған (LEFT JOIN + `count(Enrollment.id)`) |
-
----
-
-## 5-зертханадан өзгерістер
-
-- **Тұрақты деректер** — барлық деректер PostgreSQL-де сақталады; сервер қайта іске қосылса да жоғалмайды
-- **`POST /enrollments`** — енді `studentName` орнына `studentId` (бүтін сан) қабылдайды; алдымен `POST /students` арқылы студент жасаңыз
-- **Жаңа маршруттар** — `POST /students`, JOIN арқылы `GET /enrollments`, `GET /stats/courses`
-- **`level` өрісі** — әр курстың деңгейі бар (`beginner` / `intermediate` / `advanced`); `?level=` арқылы сүзуге болады
-- **Дұрыс қате жауаптары** — constraint бұзылса `500` орнына `409` немесе `404` қайтарылады
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Health check |
+| GET | `/courses` | List courses (filters: `is_elective`, `level`; sort: `popular`/`title`; pagination: `page`, `page_size`) |
+| GET | `/courses/{course_id}` | Get a single course |
+| POST | `/courses/{course_id}/like` | Increment likes via `UPDATE … SET likes = likes + 1` |
+| POST | `/students` | Create a student |
+| POST | `/enrollments` | Enroll a student in a course |
+| GET | `/enrollments` | List all enrollments with course title and student name (JOIN) |
+| GET | `/stats/courses` | Enrollment count per course including zeros (LEFT JOIN + `count(Enrollment.id)`) |
 
 ---
 
-## Alembic Миграция Командалары
+## What Changed from Lab 5
 
-| Команда | Не жасайды |
-|---------|-----------|
-| `alembic upgrade head` | Барлық күтіп тұрған миграцияларды жүргізеді |
-| `alembic downgrade -1` | Соңғы миграцияны кері қайтарады |
-| `alembic current` | Дерекқордың қазіргі нұсқасын көрсетеді |
-| `alembic history` | Толық миграция тізбегін көрсетеді |
-| `alembic revision --autogenerate -m "мәтін"` | Модель айырмашылығынан миграция жобасын жасайды |
-| `alembic check` | Модельдер мен дерекқор арасында айырмашылық бар ма тексереді |
-| `alembic upgrade 0001:0002 --sql` | Іске қоспай миграция SQL-ін басып шығарады |
-| `alembic stamp head` | Миграцияларды іске қоспай дерекқорды жаңартылды деп белгілейді |
+- **Persistent data** — all data is stored in PostgreSQL; it survives server restarts
+- **`POST /enrollments`** — now requires `studentId` (integer) instead of `studentName`; create the student first via `POST /students`
+- **New routes** — `POST /students`, `GET /enrollments` with JOIN, `GET /stats/courses`
+- **`level` field** — every course has a `level` (`beginner` / `intermediate` / `advanced`); filterable via `?level=`
+- **Proper error responses** — constraint violations return `409` or `404` instead of `500`
 
 ---
 
-## 0002 Миграциясы — Неліктен 3 Қадам?
+## Alembic Migration Commands
 
-Деректері бар кестеге `NOT NULL` бағанын бірден қосу бірден қатемен тоқтайды:
+| Command | What it does |
+|---------|--------------|
+| `alembic upgrade head` | Apply all pending migrations |
+| `alembic downgrade -1` | Roll back the last migration |
+| `alembic current` | Show current database version |
+| `alembic history` | Show the full migration chain |
+| `alembic revision --autogenerate -m "text"` | Generate a draft migration from model diff |
+| `alembic check` | Check if models and database have diverged |
+| `alembic upgrade 0001:0002 --sql` | Print migration SQL without running it |
+| `alembic stamp head` | Mark database as up to date without running migrations |
+
+---
+
+## Migration 0002 — Why 3 Steps?
+
+Adding a `NOT NULL` column to a table that already has rows fails immediately:
 
 ```
 IntegrityError: column "level" contains null values
 ```
 
-Дұрыс жол:
+The correct approach:
 
 ```python
-# Қадам 1 — NULL рұқсатпен қосамыз (бар жолдар NULL алады, қате болмайды)
+# Step 1 — add as nullable (existing rows get NULL, no error)
 op.add_column("courses", sa.Column("level", sa.Text(), nullable=True))
 
-# Қадам 2 — бар жолдарды толтырамыз
+# Step 2 — fill existing rows with a business rule
 op.execute("UPDATE courses SET level = CASE WHEN is_elective "
            "THEN 'beginner' ELSE 'intermediate' END")
 
-# Қадам 3 — енді барлық жолда мән бар, NULL-ды тыюға болады
+# Step 3 — now all rows have a value, safe to forbid NULL
 op.alter_column("courses", "level", nullable=False)
 ```
 
-Бүкіл миграция бір транзакцияда жүгіреді — кез келген қадам сәтсіз болса, дерекқор `0001` нұсқасында қалады.
+The whole migration runs in one transaction — if any step fails, the database stays at `0001`.
 
 ---
 
-## Дерекқор Қатесі → HTTP Жауабы
+## Database Error → HTTP Response Mapping
 
-Constraint бұзылулары constraint атауы арқылы дұрыс HTTP жауапқа айналдырылады (SQLSTATE емес, себебі барлық UNIQUE бұзылулар үшін бірдей):
+Constraint violations are translated to proper HTTP responses using the constraint name (not SQLSTATE, which is the same for all UNIQUE violations):
 
-| Constraint | Бұзылу | HTTP Жауабы |
-|------------|--------|-------------|
-| `students_email_key` | Email қайталанған | `409 Student with this email already exists` |
-| `enrollments_course_id_student_id_key` | Қайта тіркелу | `409 Student is already enrolled in this course` |
-| `enrollments_course_id_fkey` | Курс жоқ | `404 Course not found` |
-| `enrollments_student_id_fkey` | Студент жоқ | `404 Student not found` |
+| Constraint | Violation | HTTP Response |
+|------------|-----------|---------------|
+| `students_email_key` | Duplicate email | `409 Student with this email already exists` |
+| `enrollments_course_id_student_id_key` | Already enrolled | `409 Student is already enrolled in this course` |
+| `enrollments_course_id_fkey` | Course not found | `404 Course not found` |
+| `enrollments_student_id_fkey` | Student not found | `404 Student not found` |
 
 ```bash
-# 5 жағдайды тексеру (сервер іске қосылған болуы керек)
+# Test all 5 cases (server must be running)
 python try_errors.py
-# Күтілетін нәтиже: 5 of 5 as expected
+# Expected: 5 of 5 as expected
 ```
 
 ---
 
-## Басты Шешімдер
+## Key Design Decisions
 
-**Неліктен SQLSTATE емес, constraint атауы?**
-SQLSTATE `23505` *кез келген* UNIQUE бұзылу кезінде шығады. Бізде екі UNIQUE constraint бар, сондықтан SQLSTATE жеткіліксіз. Constraint атауы дәл нақты.
+**Why constraint name instead of SQLSTATE?**
+SQLSTATE `23505` fires for *any* UNIQUE violation. We have two UNIQUE constraints, so SQLSTATE alone cannot tell them apart. The constraint name is specific and reliable.
 
-**Неліктен `UPDATE SET likes = likes + 1`, оқу → өзгерту → жазу емес?**
-Екі бір мезгілді сұраныс екеуі де `likes = 11` оқиды, екеуі де `12` жазады — бір like жоғалады. `UPDATE … SET likes = likes + 1` дерекқорға жіберілсе, жол құлыпталады — екі арттыру да саналады.
+**Why `UPDATE SET likes = likes + 1` instead of read → increment → write?**
+Two simultaneous requests would both read `likes = 11`, both write `12`, and one like would be lost (lost update). Delegating the addition to the database with `UPDATE … SET likes = likes + 1` applies a row lock — both increments are counted.
 
-**Неліктен `SELECT` тексерусіз `commit()` кейін `IntegrityError` ұсталады?**
-`SELECT` тексеруінде race condition бар — тексеру мен INSERT арасында басқа сұраныс бір мәнді кірістіре алады. Операцияны жасап, бас тартуды өңдеу қауіпсізірек.
-
----
-
-## Эксперимент Журналы
-
-| № | Эксперимент | Не болды | Себебі | Шешімі |
-|---|-------------|----------|--------|--------|
-| 1 | `naming_convention`-да `uq` шаблонын өзгерттім | `check_models.py` айырмашылық көрсетті: модельде `students_email_unique`, DB-да `students_email_key` | Шаблон PostgreSQL таңдаған атаудан өзгеше нәтиже берді | `%(table_name)s_%(column_0_N_name)s_key` қалпына келтірдім |
-| 2 | `StudentIn`-нан `min_length=2` өшірдім, `N` атымен жібердім | `500 Internal Server Error`; логта: `students_name_check` constraint бұзылды | Pydantic тоқтатмады; DB CHECK іске тұсті, бірақ атауы `CONSTRAINT_ERRORS`-та жоқ → 500 | `Field(min_length=2)` қалпына келтірдім |
-| 3 | `CONSTRAINT_ERRORS` кілтінде typo: `students_email_uniq` | `409` орнына `500` шықты; логта нақты атау `students_email_key` | Сөздік іздеуі сәтсіз → белгісіз бұзылу → 500 | Кілтті `students_email_key`-ге түзеттім |
-| 4 | psql-де `ALTER TABLE courses ALTER COLUMN title DROP NOT NULL` жасадым | `alembic check` сәтсіз: `modify_nullable on courses.title` | Модель NOT NULL дейді, дерекқор nullable дейді — сәйкессіздік | `ALTER COLUMN title SET NOT NULL` жасадым |
-| 5 | 0002-де бірден `nullable=False` қойдым | `IntegrityError: NotNullViolation — column "level" contains null values` | Бос емес кестеге default мәнсіз NOT NULL баған қосу мүмкін емес | 3 қадамды миграцияға қайта жаздым |
-| 6 | `alembic/env.py`-дан `import models` өшірдім | Миграция барлық 3 кесте үшін `DROP TABLE` ұсынды | `Base.metadata` бос болды → Alembic барлық кестені "артық" деп санады | `0003_oops.py` жойдым, `import models` қалпына келтірдім |
-| 7 | `Student`-қа миграциясыз `phone: Mapped[str \| None]` қостым | `alembic check` сәтсіз: `Detected added column 'students.phone'` | Модель дерекқордан алда — айырмашылық | `phone` өрісін алып тастадым |
-| 8 | `0002`-ден тарамдалған екі миграция жасадым (0003 және 0004) | `alembic upgrade head` сәтсіз: `Multiple head revisions are present` | Алembic бір head күтеді, екі тәуелсіз тармақ бар | `alembic merge heads` → `0005`; эксперимент файлдарын жойдым |
+**Why catch `IntegrityError` after `commit()` instead of checking with `SELECT` first?**
+A `SELECT` check has a race condition — another request can insert the same value between the check and the insert. It's safer to attempt the operation and handle the rejection.
 
 ---
 
-## 0002 Миграциясының Өзін-өзі Тексеруі
+## Experiment Log
 
-| Нені тексеру | Нәтиже |
-|--------------|--------|
-| Мақсат және қадамдар | ✅ `courses` кестесіне `level TEXT NOT NULL` қосу. Үш қадам, әрқайсысының жеке жауапкершілігі бар. |
-| Деректер | ✅ Бар 6 жол толтырылды: `is_elective=true` → `beginner`, қалғандары → `intermediate`. Деректер жоғалмады. |
-| Атауын өзгерту және жою | ✅ Upgrade-та атауын өзгерту немесе жою жоқ. Downgrade бағанды жояды — деректер жоғалады (тренингтік DB үшін қолайлы). |
-| Кері қайтару | ✅ `downgrade()` бағанды жояды. Тестіленді: downgrade → баған жоғалды, upgrade → баған дұрыс мәндермен қалпына келді. |
-| Тексеру | ✅ `--sql` шығысы тексерілді. `alembic check` таза. upgrade → downgrade → upgrade цикл өтті. |
-| Тарих | ✅ Жалғыз head: `alembic heads` → `0002 (head)`. Миграция модель және схема өзгерістерімен бірге commit жасалды. |
-| Қолдану | ✅ `CourseOut` және `seed.sql` `level`-мен жаңартылды. `GET /courses?level=beginner` 2 курс қайтарады. |
+| # | Experiment | What happened | Cause | Fix |
+|---|------------|---------------|-------|-----|
+| 1 | Changed `uq` template in `naming_convention` | `check_models.py` showed `students_email_unique` in models vs `students_email_key` in DB | Template produced different name than PostgreSQL chose | Restored `%(table_name)s_%(column_0_N_name)s_key` |
+| 2 | Removed `min_length=2` from `StudentIn`, sent name `N` | `500 Internal Server Error`; log: `students_name_check` constraint violated | Pydantic no longer blocked it; DB CHECK fired but name not in `CONSTRAINT_ERRORS` → re-raised as 500 | Restored `Field(min_length=2)` |
+| 3 | Typo in `CONSTRAINT_ERRORS` key: `students_email_uniq` | `500` instead of `409`; log showed real name `students_email_key` | Dict lookup failed → treated as unknown violation → 500 | Fixed key to `students_email_key` |
+| 4 | `ALTER TABLE courses ALTER COLUMN title DROP NOT NULL` in psql | `alembic check` failed: `modify_nullable on courses.title` | Model says NOT NULL, database says nullable — mismatch | `ALTER COLUMN title SET NOT NULL` |
+| 5 | Auto-generated migration 0002 with `nullable=False` directly | `IntegrityError: NotNullViolation — column "level" contains null values` | Cannot add NOT NULL column to non-empty table without a default | Rewrote as 3-step migration |
+| 6 | Commented out `import models` in `alembic/env.py` | Migration proposed `DROP TABLE` for all 3 tables | `Base.metadata` was empty → Alembic saw all tables as "extra" | Deleted `0003_oops.py`, restored `import models` |
+| 7 | Added `phone: Mapped[str \| None]` to `Student` without migration | `alembic check` failed: `Detected added column 'students.phone'` | Model ahead of database — diverged | Removed the `phone` field |
+| 8 | Created two migrations branching from `0002` (0003 and 0004) | `alembic upgrade head` failed: `Multiple head revisions are present` | Two independent branches, Alembic can't choose | `alembic merge heads` → `0005`; deleted experiment files |
 
 ---
 
-## Бастапқы Деректерге Қайтару
+## Migration 0002 Self-Check
+
+| What to check | Result |
+|---------------|--------|
+| Goal and steps | ✅ Add `level TEXT NOT NULL` to `courses`. Three steps with one responsibility each. |
+| Data | ✅ All 6 existing rows filled: `is_elective=true` → `beginner`, rest → `intermediate`. No data loss. |
+| Renames and drops | ✅ No renames or drops in upgrade. Downgrade drops the column — data lost on rollback (acceptable for training DB). |
+| Rollback | ✅ `downgrade()` drops the column. Tested: downgrade → column gone, upgrade → column restored with correct values. |
+| Verification | ✅ `--sql` output reviewed. `alembic check` clean. upgrade → downgrade → upgrade cycle passes. |
+| History | ✅ Single head: `alembic heads` → `0002 (head)`. Migration committed with model and schema changes. |
+| Application | ✅ `CourseOut` and `seed.sql` updated with `level`. `GET /courses?level=beginner` returns 2 courses. |
+
+---
+
+## Resetting to Initial Data
 
 ```bash
 psql -h localhost -U catalog_app -d course_catalog -v ON_ERROR_STOP=1 -f seed.sql
 ```
 
-> ⚠️ `TRUNCATE` барлық деректерді өшіреді. Тек тренингтік дерекқорлар үшін.
+> ⚠️ `TRUNCATE` deletes all data. For training databases only.
